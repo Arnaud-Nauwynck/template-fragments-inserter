@@ -1,0 +1,26 @@
+
+defs:
+  - name: t1
+    params:
+      - name: param1
+      - name: param2
+    to: ${param1}-t1.txt
+    before: MARKER1
+    template: |
+      Hello template t1
+      this is a test..
+      param1: ${param1}
+      param2: ${param2}
+
+  - name: t2
+    params:
+      - name: param1
+      - name: param2
+    to: ${param1}-t2.txt
+    after: MARKER2
+    template: |
+      Hello template t2
+      this is a test..
+      param1: ${param1}
+      param2: ${param2}
+      
