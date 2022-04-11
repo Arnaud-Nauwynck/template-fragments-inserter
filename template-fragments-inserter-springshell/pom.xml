@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+ <parent>
+	<groupId>fr.an.tools.templatefragmentsinserter</groupId>
+	<artifactId>template-fragments-inserter-parent</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<relativePath>..</relativePath>
+  </parent>
+
+	<artifactId>template-fragments-inserter-springshell</artifactId>
+
+	<properties>
+	        <!-- 
+	        <spring-shell.version>2.0.1.RELEASE</spring-shell.version>
+	         -->
+	        <spring-shell.version>2.1.0-SNAPSHOT</spring-shell.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>fr.an.tools.templatefragmentsinserter</groupId>
+			<artifactId>template-fragments-inserter-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+	        <groupId>org.springframework.shell</groupId>
+	        <artifactId>spring-shell-starter</artifactId>
+	        <version>${spring-shell.version}</version>
+	    </dependency>
+		<dependency>
+	        <groupId>org.springframework.shell</groupId>
+			<artifactId>spring-shell-standard</artifactId>
+	        <version>${spring-shell.version}</version>
+	    </dependency>
+    
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+	                <execution>
+	                    <goals>
+	                        <goal>repackage</goal>
+	                    </goals>
+	                </execution>
+	            </executions>
+            </plugin>
+		</plugins>
+	</build>
+</project>
