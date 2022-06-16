@@ -61,12 +61,14 @@ public class SimpleTemplateInsertFragmentDef extends TemplateDef {
 			Map<Object,Object> params) {
 		val inserts = new ArrayList<InsertTextFragment>();
 		
-		String toPath = evalTemplateString(toTemplate, params);
-		String text = evalTemplateString(template, params);
+		String toPath = evalTemplateString("to", toTemplate, params);
+		log.info("toPath:" + toPath);
+		
+		String text = evalTemplateString("template", template, params);
+		log.info("text:" + text);
+		
 		List<String> textLines = Arrays.asList(text.split("\n"));
 		
-		log.info("toPath:" + toPath);
-		log.info("text:" + text);
 		
 		File toFile = new File(baseDir, toPath);
 		File toParentDir = toFile.getParentFile();
@@ -84,7 +86,7 @@ public class SimpleTemplateInsertFragmentDef extends TemplateDef {
 			
 			int fileLineCount = fileLines.size();
 			if (after != null) {
-				String afterText = evalTemplateString(after, params);
+				String afterText = evalTemplateString("after", after, params);
 				log.info("after:" + afterText);
 				Pattern afterPattern = Pattern.compile(afterText);
 				for(int i = 0; i < fileLineCount; i++) {
@@ -99,8 +101,12 @@ public class SimpleTemplateInsertFragmentDef extends TemplateDef {
 						break;
 					}
 				}
-			} else {
-				String beforeText = evalTemplateString(before, params);
+				if (lineNumber == -1) {
+				    log.error("after text NOT FOUND: " + afterText);
+				}
+				
+			} else if (before != null) {
+				String beforeText = evalTemplateString("before", before, params);
 				log.info("before:" + beforeText);
 				Pattern beforePattern = Pattern.compile(beforeText);
 				for(int i = 0; i < fileLineCount; i++) {
@@ -116,6 +122,26 @@ public class SimpleTemplateInsertFragmentDef extends TemplateDef {
 						break;
 					}
 				}
+
+				if (lineNumber == -1) {
+                    log.error("before text NOT FOUND: " + beforeText);
+                }
+			} else if (force) {
+			    log.info("force overwrite text " + textLines.size() + " lines:\n" + String.join("\n", textLines));
+
+			    lineNumber = 0;
+
+			    fileLines.clear();
+                fileLines.addAll(textLines);
+                inserts.add(new InsertTextFragment(toFile, 0, text));
+			} else {
+			    // ??? 
+                log.info("??? unknown before/after/force ... append text " + textLines.size() + " lines:\n" + String.join("\n", textLines));
+
+                lineNumber = fileLines.size();
+                fileLines.addAll(textLines);
+                inserts.add(new InsertTextFragment(toFile, 0, text));
+			    
 			}
 		} else {
 			// error or full content?
@@ -154,14 +180,17 @@ public class SimpleTemplateInsertFragmentDef extends TemplateDef {
 		}
 	}
 	
-	protected String evalTemplateString(Template template, Map<Object,Object> params) {
+	protected String evalTemplateString(String displayMsg,
+	        Template template, Map<Object,Object> params) {
 		StringWriter res = new StringWriter();
 		try {
 			template.process(params, res);
 		} catch (TemplateException ex) {
-			throw new RuntimeException("Failed to eval template", ex);
+			throw new RuntimeException("Failed to eval template " + displayMsg, ex);
 		} catch (IOException ex) {
-			throw new RuntimeException("Failed to eval template", ex);
+			throw new RuntimeException("Failed to eval template " + displayMsg, ex);
+		} catch(RuntimeException ex) {
+		    throw new RuntimeException("Failed to eval template " + displayMsg, ex);
 		}
 		return res.toString();
 	}

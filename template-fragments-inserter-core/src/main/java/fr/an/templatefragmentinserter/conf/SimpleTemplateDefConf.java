@@ -1,10 +1,13 @@
 package fr.an.templatefragmentinserter.conf;
 
-public class SimpleTemplateDefConf extends TemplateDefConf {
+public class SimpleTemplateDefConf {
 	
+    public String name;
+    
 	public String to;
 	
 	public String template;
+    public String templateFile;
 
 	// public String templateType = "freemaker"; // "velocity", ..
 

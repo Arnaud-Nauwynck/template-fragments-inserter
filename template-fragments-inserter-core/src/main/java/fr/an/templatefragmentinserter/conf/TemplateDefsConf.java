@@ -4,6 +4,6 @@ import java.util.List;
 
 public class TemplateDefsConf {
 
-	public List<SimpleTemplateDefConf> defs;
+	public List<CompositeTemplateDefConf> defs;
 	
 }

@@ -38,6 +38,13 @@ public class TemplateDefRegistry {
 		//
 	}
 
+	public void reloadForDir(final File dir) {
+	    synchronized (lock) {
+	        cachedContextPerDir.clear();
+	    }
+	    lookupContextForDir(dir);
+	}
+	
 	public TemplatesLookupContext lookupContextForDir(final File dir) {
 		TemplatesLookupContext res;
 		TemplatesLookupContext cachedAncestorContext = null;

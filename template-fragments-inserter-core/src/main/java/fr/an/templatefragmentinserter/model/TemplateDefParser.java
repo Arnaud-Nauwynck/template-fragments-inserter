@@ -1,17 +1,20 @@
 package fr.an.templatefragmentinserter.model;
 
+import org.apache.commons.io.FileUtils;
+import org.yaml.snakeyaml.Yaml;
+
+import com.google.common.collect.ImmutableList;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import org.yaml.snakeyaml.Yaml;
-
-import com.google.common.collect.ImmutableList;
-
+import fr.an.templatefragmentinserter.conf.CompositeTemplateDefConf;
 import fr.an.templatefragmentinserter.conf.SimpleTemplateDefConf;
 import fr.an.templatefragmentinserter.conf.TemplateDefsConf;
 import freemarker.template.Configuration;
@@ -33,32 +36,67 @@ public class TemplateDefParser {
 		} catch (IOException ex) {
 			throw new RuntimeException("Failed to read file " + codeTemplateFile, ex);
 		}
+		File parentDir = codeTemplateFile.getParentFile();
 		Configuration freeMakerConfig = new Configuration(); // Configuration.getIncompatibleImprovements());
-		for(val def: templateDefsConf.defs) {
-			val paramDefs = ImmutableList.<TemplateParamDef>builder();
-			if (def.params != null) {
-				for(val paramConf: def.params) {
-					val paramDef = new TemplateParamDef(paramConf.name, paramConf.defaultValue);
-					paramDefs.add(paramDef);
-				}
-			}
+		for(CompositeTemplateDefConf compositeTemplateConf: templateDefsConf.defs) {
+			val templateDef = toCompositeTemplateDef(parentDir, freeMakerConfig, compositeTemplateConf);
 			
-			Template toTemplate = textToTemplate("to", def.to, freeMakerConfig);
-			Template template = textToTemplate("template", def.template, freeMakerConfig);
-			Template after = (def.after != null)? textToTemplate("after", def.after, freeMakerConfig) : null;
-			Template before = (def.before != null)? textToTemplate("before", def.before, freeMakerConfig) : null;
-			   
-			TemplateDef templateDef = new SimpleTemplateInsertFragmentDef(
-					def.name, paramDefs.build(), //
-					toTemplate, template, //
-					def.inject, // 
-					after, before, //
-					def.force,
-					def.unlessExists
-					);
-			resDefs.put(def.name, templateDef);
+			resDefs.put(compositeTemplateConf.name, templateDef);
 		}
 	}
+
+    private static CompositeTemplateInsertFragmentDef toCompositeTemplateDef(
+            File parentDir, 
+            Configuration freeMakerConfig, 
+            CompositeTemplateDefConf def) {
+        val paramDefsBuilder = ImmutableList.<TemplateParamDef>builder();
+        if (def.params != null) {
+        	for(val paramConf: def.params) {
+        		val paramDef = new TemplateParamDef(paramConf.name, paramConf.defaultValue);
+        		paramDefsBuilder.add(paramDef);
+        	}
+        }
+        val paramDefs = paramDefsBuilder.build();
+        val elementsBuilder = ImmutableList.<TemplateDef>builder();
+        for(val simpleTemplateDef: def.elements) {
+            val element = confToSimpleTemplateDef(parentDir, freeMakerConfig, def, paramDefs, simpleTemplateDef);
+            elementsBuilder.add(element);
+        }
+        val elements = elementsBuilder.build();
+        val templateDef = new CompositeTemplateInsertFragmentDef(def.name, paramDefs, elements);
+        return templateDef;
+    }
+
+    private static SimpleTemplateInsertFragmentDef confToSimpleTemplateDef(File parentDir, Configuration freeMakerConfig,
+            CompositeTemplateDefConf def,
+            ImmutableList<TemplateParamDef> paramDefs,
+            SimpleTemplateDefConf src) {
+        Template toTemplate = textToTemplate("to", src.to, freeMakerConfig);
+        
+        String templateText = src.template;
+        if (src.template == null || src.template.isEmpty()) {
+            File templateFile = new File(parentDir, src.templateFile);
+            try {
+                templateText = FileUtils.readFileToString(templateFile, StandardCharsets.UTF_8);
+            } catch (IOException ex) {
+                throw new RuntimeException("Failed to read file " + templateFile, ex);
+            }
+        }
+        Template template = textToTemplate("template", templateText, freeMakerConfig);
+        
+        Template after = (src.after != null)? textToTemplate("after", src.after, freeMakerConfig) : null;
+        Template before = (src.before != null)? textToTemplate("before", src.before, freeMakerConfig) : null;
+           
+        val res = new SimpleTemplateInsertFragmentDef(
+                def.name, paramDefs, //
+                toTemplate, template, //
+                src.inject, // 
+                after, before, //
+                src.force,
+                src.unlessExists
+                );
+        return res;
+    }
 
 	private static Template textToTemplate(String name, String text, Configuration freeMakerConfig) {
 		try {
